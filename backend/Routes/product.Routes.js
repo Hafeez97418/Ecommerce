@@ -1,4 +1,5 @@
 const express = require("express");
+const { body } = require("express-validator");
 const {
   CreateProduct,
   GetAllProducts,
@@ -6,12 +7,28 @@ const {
   DeleteProduct,
   GetProductDetails,
 } = require("../Controllers/Product");
+const { checkLoggedIn, checkAdmin } = require("../Utils/Auth");
 
 const ProductsRouter = express.Router();
 
-ProductsRouter.post("/new", CreateProduct);
+ProductsRouter.post(
+  "/new",
+  checkLoggedIn,
+  checkAdmin,
+  [
+    body("name", "please enter a product name").notEmpty(),
+    body(
+      "description",
+      "minimum characters for description must be 5"
+    ).isLength({ min: 5 }),
+    body("price", "please enter the price of the product").notEmpty(),
+    body("productCategory", "Please enter Product Category").notEmpty(),
+    body("stock", "Please enter The Number of Product in Stock").notEmpty(),
+  ],
+  CreateProduct
+);
 ProductsRouter.get("/all", GetAllProducts);
-ProductsRouter.put("/update/:id", UpdateProduct);
-ProductsRouter.delete("/delete/:id", DeleteProduct);
+ProductsRouter.put("/update/:id", checkLoggedIn, checkAdmin, UpdateProduct);
+ProductsRouter.delete("/delete/:id", checkLoggedIn, checkAdmin, DeleteProduct);
 ProductsRouter.get("/details/:id", GetProductDetails);
 module.exports = { ProductsRouter };

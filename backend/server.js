@@ -1,11 +1,16 @@
 //imports
 const express = require("express");
-const app = express();
+const bodyParser = require("body-parser");
 require("dotenv").config({ path: "backend/config/config.env" });
 const { DB_Connect } = require("./config/DBconfig");
 const { ProductsRouter } = require("./Routes/product.Routes");
-const { err } = require("./middleware/err.js");
-//end of imorts
+const UsersRouter = require("./Routes/User.Routes.js");
+const cookieparser = require("cookie-parser");
+const { errors } = require("./Middleware/err.js");
+//end of imports
+const app = express();
+
+
 //handling uncaughterror
 process.on("uncaughtException", (err) => {
   console.log(`Error:${err.message}`);
@@ -14,10 +19,16 @@ process.on("uncaughtException", (err) => {
 });
 //end of handling uncaughterror
 //middlewares
-app.use(express.json());
 DB_Connect();
-app.use(err);
+
+app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieparser());
 app.use("/api/v1/products", ProductsRouter);
+app.use("/api/v1/user", UsersRouter);
+app.use(errors);
+
 
 //end of middlewares
 

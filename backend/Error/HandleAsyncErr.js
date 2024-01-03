@@ -1,9 +1,17 @@
-const ErrorHandler = require("./ErrorHandler.js");
-const HandleAsyncErrors = (func) => {
-  return (req, res, next) => {
-    func(req, res, next).catch((err) => {
-      return next(new ErrorHandler(err.message, 500, res));
-    });
-  };
+const ErrorHandler = require("./ErrorHandler");
+
+const HandleAsyncErrors = (theFunc) => (req, res, next) => {
+  Promise.resolve(theFunc(req, res, next)).catch((err) => {
+    if (err.name === "CastError") {
+      const message = `Resource not found. Invalid: ${err.path}`;
+      next(new ErrorHandler(message, 400));
+    } else if (err.code === 11000) {
+      const message = `Duplicate ${Object.keys(err.keyValue)} Entered`;
+      next(new ErrorHandler(message, 400));
+    } else {
+      next(new ErrorHandler(err.message, 500));
+    }
+  });
 };
+
 module.exports = HandleAsyncErrors;
