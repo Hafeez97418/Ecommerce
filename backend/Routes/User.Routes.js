@@ -6,6 +6,11 @@ const {
   Logout,
   ResetPassword,
   NewPassword,
+  GetUserDetails,
+  GetAllUsers,
+  UpdateProfile,
+  UpdateUserRole,
+  DeleteUser,
 } = require("../Controllers/User");
 const { checkLoggedIn, checkAdmin } = require("../Utils/Auth");
 
@@ -20,18 +25,23 @@ UsersRouter.post(
     }),
   ],
   Register
-);
-UsersRouter.post(
-  "/login",
-  [
-    body("email", "Email is required").trim().isEmail(),
-    body("password", "Password must be atleast 6 characters").isLength({
-      min: 6,
-    }),
-  ],
-  Login
-);
-UsersRouter.get("/logout", checkLoggedIn, Logout);
-UsersRouter.post("/resetpassword", ResetPassword);
-UsersRouter.post("/newpassword", NewPassword);
+)
+  .post(
+    "/login",
+    [
+      body("email", "Email is required").trim().isEmail(),
+      body("password", "Password must be atleast 6 characters").isLength({
+        min: 6,
+      }),
+    ],
+    Login
+  )
+  .put("/updateprofile", checkLoggedIn, UpdateProfile)
+  .put("/updaterole/:id", checkLoggedIn, checkAdmin, UpdateUserRole)
+  .delete("/delete/:id", checkLoggedIn, checkAdmin, DeleteUser)
+  .get("/logout", checkLoggedIn, Logout)
+  .post("/resetpassword", ResetPassword)
+  .post("/newpassword", NewPassword)
+  .get("/getuserdetails/:id", checkLoggedIn, GetUserDetails)
+  .get("/getallusers", checkLoggedIn, checkAdmin, GetAllUsers);
 module.exports = UsersRouter;

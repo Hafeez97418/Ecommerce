@@ -6,6 +6,9 @@ const {
   UpdateProduct,
   DeleteProduct,
   GetProductDetails,
+  CreateProductReviews,
+  GetProductReviews,
+  DeleteProductReviews,
 } = require("../Controllers/Product");
 const { checkLoggedIn, checkAdmin } = require("../Utils/Auth");
 
@@ -26,9 +29,20 @@ ProductsRouter.post(
     body("stock", "Please enter The Number of Product in Stock").notEmpty(),
   ],
   CreateProduct
-);
-ProductsRouter.get("/all", GetAllProducts);
-ProductsRouter.put("/update/:id", checkLoggedIn, checkAdmin, UpdateProduct);
-ProductsRouter.delete("/delete/:id", checkLoggedIn, checkAdmin, DeleteProduct);
-ProductsRouter.get("/details/:id", GetProductDetails);
+)
+  .get("/all", GetAllProducts)
+  .put("/update/:id", checkLoggedIn, checkAdmin, UpdateProduct)
+  .delete("/delete/:id", checkLoggedIn, checkAdmin, DeleteProduct)
+  .get("/details/:id", GetProductDetails)
+  .put(
+    "/review/:id",
+    checkLoggedIn,
+    [
+      body("rating", "please enter your correct rating").notEmpty().isNumeric(),
+      body("comment", "please enter the comment for your rating").notEmpty(),
+    ],
+    CreateProductReviews
+  )
+  .get("/getreviews/:id", GetProductReviews)
+  .delete("/deletereview/:id", checkLoggedIn, DeleteProductReviews);
 module.exports = { ProductsRouter };

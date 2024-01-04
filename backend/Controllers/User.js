@@ -1,7 +1,7 @@
 const HandleAsyncErrors = require("../Error/HandleAsyncErr");
 const ErrorHandler = require("../Error/ErrorHandler");
 const UserModel = require("../Models/UserModel");
-const { GenrateToken } = require("../Utils/jsonwebtoken");
+const { GenrateToken, VerifyToken } = require("../Utils/jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { sendEmail } = require("../Utils/SendMail");
 //register user
@@ -24,6 +24,7 @@ exports.Register = HandleAsyncErrors(async (req, res, next) => {
     message: "User created successfully",
   });
 });
+//login
 exports.Login = HandleAsyncErrors(async (req, res, next) => {
   const { email, password } = req.body;
   const user = await UserModel.findOne({ email });
@@ -46,7 +47,7 @@ exports.Login = HandleAsyncErrors(async (req, res, next) => {
     }
   }
 });
-
+//logout
 exports.Logout = HandleAsyncErrors(async (req, res, next) => {
   res.cookie("token", null, {
     expires: new Date(Date.now()),
@@ -56,7 +57,7 @@ exports.Logout = HandleAsyncErrors(async (req, res, next) => {
     message: "user has logged out",
   });
 });
-
+//send otp for newpassword
 exports.ResetPassword = HandleAsyncErrors(async (req, res, next) => {
   const { email } = req.body;
   const user = await UserModel.findOne({ email });
@@ -92,6 +93,7 @@ http://localhost:4000
     }
   }
 });
+//updating password
 exports.NewPassword = HandleAsyncErrors(async (req, res, next) => {
   const { password, otp } = req.body;
   if (!req.cookies.otp) {
@@ -116,5 +118,78 @@ exports.NewPassword = HandleAsyncErrors(async (req, res, next) => {
         message: "Password has been changed successfully",
       });
     }
+  }
+});
+//getting user details by id
+exports.GetUserDetails = HandleAsyncErrors(async (req, res, next) => {
+  const user = await UserModel.findById(req.params.id);
+  if (!user) {
+    next(new ErrorHandler("User not found", 404));
+  } else {
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  }
+});
+//getting all users --admin
+exports.GetAllUsers = HandleAsyncErrors(async (req, res, next) => {
+  const user = await UserModel.find();
+  if (!user) {
+    next(new ErrorHandler("User not found", 404));
+  } else {
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  }
+});
+//updating user profile --auth required
+exports.UpdateProfile = HandleAsyncErrors(async (req, res, next) => {
+  //user can only change its name and avtar
+  const { name, avtar } = req.body;
+  const token = VerifyToken(req.cookies.token);
+  const user = await UserModel.findByIdAndUpdate(token.id, {
+    name,
+    avtar,
+  });
+  if (!user) {
+    next(new ErrorHandler("please login again somthing went wrong", 400));
+  } else {
+    res.status(200).json({
+      success: true,
+      message: "profile updated",
+    });
+  }
+});
+//updating role of the user --admin
+exports.UpdateUserRole = HandleAsyncErrors(async (req, res, next) => {
+  const { role } = req.body;
+  if (role === "user" || role === "admin") {
+    const user = await UserModel.findByIdAndUpdate(req.params.id, {
+      role,
+    });
+    if (!user) {
+      next(new ErrorHandler("user not found", 404));
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "user role is updated",
+      });
+    }
+  } else {
+    next(new ErrorHandler("Invalid roles", 400));
+  }
+});
+//deleteting the user --admin
+exports.DeleteUser = HandleAsyncErrors(async (req, res, next) => {
+  const user = await UserModel.findByIdAndDelete(req.params.id);
+  if (!user) {
+    next(new ErrorHandler("user not found", 404));
+  } else {
+    res.status(200).json({
+      success: true,
+      message: "user has deleted",
+    });
   }
 });

@@ -3,13 +3,16 @@ const ErrorHandler = require("../Error/ErrorHandler");
 const ProductModel = require("../Models/ProductModel");
 const Apifeatures = require("../Utils/features");
 const { validationResult } = require("express-validator");
+const { VerifyToken } = require("../Utils/jsonwebtoken");
+const UserModel = require("../Models/UserModel");
 // createing the product --Admin
 exports.CreateProduct = HandleAsyncErrors(async (req, res, next) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
-   next(new ErrorHandler(result.errors[0].msg, 400))
+    next(new ErrorHandler(result.errors[0].msg, 400));
   } else {
-    const product = await ProductModel.create({
+    const verify = VerifyToken(req.cookies.token);
+    const object = {
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
@@ -19,14 +22,19 @@ exports.CreateProduct = HandleAsyncErrors(async (req, res, next) => {
       stock: req.body.stock,
       NumOfReviews: req.body.NumOfReviews,
       reviews: req.body.reviews,
+    };
+    req.body.reviews.forEach((review) => {
+      review.id = verify.id;
     });
+
+    const product = await ProductModel.create(object);
     res.status(200).json({
       success: true,
       product,
     });
   }
 });
-
+//getting all products
 exports.GetAllProducts = HandleAsyncErrors(async (req, res, next) => {
   const model = ProductModel;
   const resultPerPage = 5;
@@ -40,10 +48,19 @@ exports.GetAllProducts = HandleAsyncErrors(async (req, res, next) => {
     product,
   });
 });
+//updating product details --admin
 exports.UpdateProduct = HandleAsyncErrors(async (req, res, next) => {
+  const { name, description, price, images, productCategory, stock } = req.body;
   const product = await ProductModel.findByIdAndUpdate(
     req.params.id,
-    req.body,
+    {
+      name,
+      description,
+      price,
+      images,
+      productCategory,
+      stock,
+    },
     {
       new: true,
       runValidators: true,
@@ -57,6 +74,7 @@ exports.UpdateProduct = HandleAsyncErrors(async (req, res, next) => {
     product,
   });
 });
+//deleteing existing product --admin
 exports.DeleteProduct = HandleAsyncErrors(async (req, res, next) => {
   const product = await ProductModel.findByIdAndDelete(req.params.id);
   if (!product) {
@@ -67,6 +85,7 @@ exports.DeleteProduct = HandleAsyncErrors(async (req, res, next) => {
     product,
   });
 });
+//getting a single product details
 exports.GetProductDetails = HandleAsyncErrors(async (req, res, next) => {
   const product = await ProductModel.findById(req.params.id);
   if (!product) {
@@ -76,4 +95,60 @@ exports.GetProductDetails = HandleAsyncErrors(async (req, res, next) => {
     success: true,
     product,
   });
+});
+
+//creating a product reviews
+exports.CreateProductReviews = HandleAsyncErrors(async (req, res, next) => {
+  const verify = VerifyToken(req.cookies.token);
+  const { rating, comment } = req.body;
+  const token = VerifyToken(req.cookies.token);
+  const product = await ProductModel.findById(req.params.id);
+  const user = await UserModel.findById(token.id);
+  if (!product) {
+    next(new ErrorHandler("product not found", 404));
+  } else if (rating < 0 || rating > 5) {
+    next(new ErrorHandler("rating must be from 0 to 5"));
+  } else {
+    const review = {
+      Name: user.name,
+      rating,
+      comment,
+      id: verify.id,
+    };
+    product.reviews.push(review);
+    await product.save();
+    res.status(200).json({
+      success: true,
+      message: "Review has sended",
+    });
+  }
+});
+//getting product reviews
+exports.GetProductReviews = HandleAsyncErrors(async (req, res, next) => {
+  const product = await ProductModel.findById(req.params.id);
+  if (!product) {
+    next(new ErrorHandler("product not found", 404));
+  } else {
+    res.status(200).json({
+      success: true,
+      reviews: product.reviews,
+    });
+  }
+});
+//deleteing product reviews
+exports.DeleteProductReviews = HandleAsyncErrors(async (req, res, next) => {
+  const verify = VerifyToken(req.cookies.token);
+  const product = await ProductModel.findById(req.params.id);
+  if (!product) {
+    next(new ErrorHandler("product not found", 404));
+  } else {
+    product.reviews = product.reviews.filter(
+      (review) => review.id.toString() !== verify.id.toString()
+    );
+    await product.save();
+    res.status(200).json({
+      success: true,
+      message: "Review has deleted",
+    });
+  }
 });

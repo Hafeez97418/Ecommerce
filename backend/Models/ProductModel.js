@@ -53,6 +53,10 @@ const ProductSchema = new mongoose.Schema({
         type: String,
         required: [true, "please enter a review comment"],
       },
+      id: {
+        type: mongoose.Schema.ObjectId,
+        required: [true, "review id is missing"],
+      }
     },
   ],
   createdAt: {

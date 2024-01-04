@@ -7,6 +7,7 @@ const { ProductsRouter } = require("./Routes/product.Routes");
 const UsersRouter = require("./Routes/User.Routes.js");
 const cookieparser = require("cookie-parser");
 const { errors } = require("./Middleware/err.js");
+const OrderRouter = require("./Routes/Order.routes.js");
 //end of imports
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieparser());
 app.use("/api/v1/products", ProductsRouter);
 app.use("/api/v1/user", UsersRouter);
+app.use("/api/v1/orders",OrderRouter)
 app.use(errors);
 
 
