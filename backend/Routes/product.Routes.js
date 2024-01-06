@@ -1,5 +1,4 @@
 const express = require("express");
-const { body } = require("express-validator");
 const {
   CreateProduct,
   GetAllProducts,
@@ -9,40 +8,24 @@ const {
   CreateProductReviews,
   GetProductReviews,
   DeleteProductReviews,
+  InformProductCancelation,
 } = require("../Controllers/Product");
 const { checkLoggedIn, checkAdmin } = require("../Utils/Auth");
 
 const ProductsRouter = express.Router();
 
-ProductsRouter.post(
-  "/new",
-  checkLoggedIn,
-  checkAdmin,
-  [
-    body("name", "please enter a product name").notEmpty(),
-    body(
-      "description",
-      "minimum characters for description must be 5"
-    ).isLength({ min: 5 }),
-    body("price", "please enter the price of the product").notEmpty(),
-    body("productCategory", "Please enter Product Category").notEmpty(),
-    body("stock", "Please enter The Number of Product in Stock").notEmpty(),
-  ],
-  CreateProduct
-)
-  .get("/all", GetAllProducts)
-  .put("/update/:id", checkLoggedIn, checkAdmin, UpdateProduct)
-  .delete("/delete/:id", checkLoggedIn, checkAdmin, DeleteProduct)
-  .get("/details/:id", GetProductDetails)
-  .put(
-    "/review/:id",
-    checkLoggedIn,
-    [
-      body("rating", "please enter your correct rating").notEmpty().isNumeric(),
-      body("comment", "please enter the comment for your rating").notEmpty(),
-    ],
-    CreateProductReviews
-  )
+ProductsRouter.get("/all", GetAllProducts)
   .get("/getreviews/:id", GetProductReviews)
-  .delete("/deletereview/:id", checkLoggedIn, DeleteProductReviews);
+  .get("/details/:id", GetProductDetails)
+  .post("/new", checkLoggedIn, checkAdmin, CreateProduct)
+  .put("/update/:id", checkLoggedIn, checkAdmin, UpdateProduct)
+  .put("/review/:id", checkLoggedIn, CreateProductReviews)
+  .delete("/delete/:id", checkLoggedIn, checkAdmin, DeleteProduct)
+  .delete("/deletereview/:id", checkLoggedIn, DeleteProductReviews)
+  .delete(
+    "/informproductcancelation/:id",
+    checkLoggedIn,
+    checkAdmin,
+    InformProductCancelation
+  );
 module.exports = { ProductsRouter };

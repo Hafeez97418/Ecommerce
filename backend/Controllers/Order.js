@@ -1,6 +1,5 @@
 const HandleAsyncErrors = require("../Error/HandleAsyncErr");
 const ErrorHandler = require("../Error/ErrorHandler");
-const { validationResult } = require("express-validator");
 const { VerifyToken } = require("../Utils/jsonwebtoken");
 const ProductModel = require("../Models/ProductModel");
 const OrderModel = require("../Models/OrderModel");
@@ -12,29 +11,22 @@ exports.NewOrder = HandleAsyncErrors(async (req, res, next) => {
   const date = new Date();
   const product = await ProductModel.findById(req.params.id);
   if (!product || !user) {
-    next(
-      new ErrorHandler(
-        "opps someting went wrong please login and try again",
-        400
-      )
-    );
+    next(new ErrorHandler("product not found please login and try again", 400));
   } else {
     date.setMilliseconds(date.getMilliseconds() + expected);
     const OrderObject = {
       customer: user.id,
-      products: [
-        {
-          product: product._id,
-          quantity: req.body.quantity,
-          price: product.price,
-        },
-      ],
+      product: product._id,
+      quantity: req.body.quantity,
+      price: product.price,
       totalAmount: product.price * req.body.quantity,
       shippingAddress: req.body.shippingAddress,
       paymentMethod: req.body.paymentMethod,
       deliverdAt: date,
     };
     const order = await OrderModel.create(OrderObject);
+    product.stock = product.stock - req.body.quantity;
+    await product.save();
     if (!order) {
       next(
         new ErrorHandler(
@@ -67,7 +59,6 @@ exports.GetMyOrders = HandleAsyncErrors(async (req, res, next) => {
 //get all orders --admin
 exports.GetAllOrders = HandleAsyncErrors(async (req, res, next) => {
   const { status } = req.query;
-  console.log(req.query);
   if (!status || status == "") {
     order = await OrderModel.find();
   } else {
@@ -94,11 +85,15 @@ exports.UpdateOrderStatus = HandleAsyncErrors(async (req, res, next) => {
     }
   }
   if (checkStatus === false) {
-      next(new ErrorHandler("Invalid status", 400));
+    next(new ErrorHandler("Invalid status", 400));
   } else {
-    const order = await OrderModel.findByIdAndUpdate(req.params.id, {
-      status: status,
-    });
+    const order = await OrderModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: status,
+      },
+      { runValidators: true }
+    );
     if (!order) {
       next(
         new ErrorHandler("something went wrong please login and try again", 404)
@@ -119,6 +114,9 @@ exports.DeleteOrder = HandleAsyncErrors(async (req, res, next) => {
       new ErrorHandler("something went wrong please login and try again", 404)
     );
   } else {
+    const product = await ProductModel.findById(order.product);
+    product.stock = product.stock + order.quantity;
+    await product.save();
     res.status(200).json({
       success: true,
       message: "order has been deleted",

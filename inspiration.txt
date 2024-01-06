@@ -1,0 +1,2 @@
+inspiration_url = http://ps.magentech.com/themes/sp_market2/en/#
+theme_color = white with rare black and red hover text

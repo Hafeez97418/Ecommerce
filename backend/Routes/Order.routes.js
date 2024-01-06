@@ -1,5 +1,4 @@
 const express = require("express");
-const { body } = require("express-validator");
 const { checkLoggedIn, checkAdmin } = require("../Utils/Auth");
 const {
   NewOrder,
@@ -10,9 +9,9 @@ const {
 } = require("../Controllers/Order");
 const OrderRouter = express.Router();
 OrderRouter.post("/neworder/:id", checkLoggedIn, NewOrder)
-  .get("/myorders", checkLoggedIn, GetMyOrders)
-  .get("/getallorders", checkLoggedIn, checkAdmin, GetAllOrders)
   .put("/updateorderstatus/:id", checkLoggedIn, checkAdmin, UpdateOrderStatus)
-  .delete("/cancelorder/:id",checkLoggedIn, DeleteOrder);
+  .delete("/cancelorder/:id", checkLoggedIn, DeleteOrder)
+  .get("/myorders", checkLoggedIn, GetMyOrders)
+  .get("/getallorders", checkLoggedIn, checkAdmin, GetAllOrders);
 
 module.exports = OrderRouter;

@@ -18,7 +18,6 @@ exports.sendEmail = async (receiverMail, subject, html) => {
       html: html, // html body
     });
 
-    console.log("Message sent: %s", info.messageId);
     return info.messageId;
   } catch (err) {
       console.log(err);

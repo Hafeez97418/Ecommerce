@@ -8,6 +8,8 @@ const HandleAsyncErrors = (theFunc) => (req, res, next) => {
     } else if (err.code === 11000) {
       const message = `Duplicate ${Object.keys(err.keyValue)} Entered`;
       next(new ErrorHandler(message, 400));
+    } else if (err.name === "ValidationError") {
+      next(new ErrorHandler(err.message, 400));
     } else {
       next(new ErrorHandler(err.message, 500));
     }
